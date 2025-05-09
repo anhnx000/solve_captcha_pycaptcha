@@ -14,7 +14,8 @@ class captcha_dm(LightningDataModule):
     def setup(self, stage:  Optional[str]) -> None:
         train_dataset_1  = captcha_dataset('train')
         train_dataset_2  = captcha_dataset('../dataset_real/train')
-        self.train_dataset = torch.utils.data.ConcatDataset([train_dataset_1, train_dataset_2])
+        train_dataset_3 = train_dataset_2 * 100 
+        self.train_dataset = torch.utils.data.ConcatDataset([train_dataset_1, train_dataset_3])
         
         val_dataset_1  = captcha_dataset('val')
         val_dataset_2  = captcha_dataset('../dataset_real/val')
