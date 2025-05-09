@@ -5,6 +5,8 @@ from data.dataset import str_to_vec, lst_to_str
 import torchvision.transforms as transforms
 from PIL import Image
 
+
+
 transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])

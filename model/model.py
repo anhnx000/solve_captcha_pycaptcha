@@ -4,7 +4,7 @@ import torchvision.models as models
 import torch.nn.functional as F
 import torch
 from data.dataset import HEIGHT, WIDTH, CLASS_NUM, CHAR_LEN, lst_to_str
-
+import wandb
 
 def eval_acc(label, pred):
     # label: CHAR_LEN x batchsize
@@ -35,26 +35,33 @@ class captcha_model(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
-        self.log("train loss", loss.item())
-        self.log("train acc", eval_acc(label, y))
+        self.log("train_loss", loss.item(), on_step=True, on_epoch=True, prog_bar=True)
+        eval_acc_score = eval_acc(label, y)
+        self.log("train_acc", eval_acc_score, on_step=True, on_epoch=True, prog_bar=True)
+        wandb.log({"train_loss": loss.item(), "train_acc": eval_acc_score})
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
-        self.log("val loss", loss.item())
-        self.log("val acc", eval_acc(label, y))
+        self.log("val_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
+        eval_acc_score = eval_acc(label, y)
+        self.log("val_acc", eval_acc_score, on_step=False, on_epoch=True, prog_bar=True)
+        wandb.log({"val_loss": loss.item(), "val_acc": eval_acc_score})
         return loss
 
     def test_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
-        self.log("test loss", loss.item())
-        self.log("test acc", eval_acc(label, y))
+        self.log("test_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
+        eval_acc_score = eval_acc(label, y)
+        self.log("test_acc", eval_acc_score, on_step=False, on_epoch=True, prog_bar=True)
+        wandb.log({"test_loss": loss.item(), "test_acc": eval_acc})
         if batch_idx == 0:
             label = label.permute(1, 0)
             y = y.permute(1, 0, 2)
             pred = y.argmax(dim=2)
             res = [f"pred:{lst_to_str(pred[i])}, true:{lst_to_str(label[i])}" for i in range(pred.size(0))]
             print("\n".join(res))
+            wandb.log({"test_pred": res})
         return loss
 
     def configure_optimizers(self):

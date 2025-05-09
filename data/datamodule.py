@@ -3,18 +3,26 @@ import pytorch_lightning as pl
 from pytorch_lightning import LightningDataModule
 from data.dataset import captcha_dataset
 from torch.utils.data import DataLoader
-
+import torch 
 
 class captcha_dm(LightningDataModule):
-    def __init__(self, batch_size=128, num_workers=8):
+    def __init__(self, batch_size=20, num_workers=8):
         super(captcha_dm,self).__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
 
     def setup(self, stage:  Optional[str]) -> None:
-        self.train_dataset = captcha_dataset('train')
-        self.val_dataset = captcha_dataset('val')
-        self.test_dataset = captcha_dataset('test')
+        train_dataset_1  = captcha_dataset('train')
+        train_dataset_2  = captcha_dataset('../dataset_real/train')
+        self.train_dataset = torch.utils.data.ConcatDataset([train_dataset_1, train_dataset_2])
+        
+        val_dataset_1  = captcha_dataset('val')
+        val_dataset_2  = captcha_dataset('../dataset_real/val')
+        self.val_dataset = torch.utils.data.ConcatDataset([val_dataset_1, val_dataset_2])
+        
+        # test_dataset_1  = captcha_dataset('test')
+        # test_dataset_2  = captcha_dataset('../dataset_real/test')
+        # self.test_dataset = torch.utils.data.ConcatDataset([test_dataset_1, test_dataset_2])
     
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)

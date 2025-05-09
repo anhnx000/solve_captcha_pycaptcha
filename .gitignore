@@ -7,3 +7,9 @@ test.ipynb
 *.ckpt
 *.ipynb
 events.out*
+lightning_logs/
+checkpoints/
+checkpoint/ 
+wandb/*
+wandb/ 
+

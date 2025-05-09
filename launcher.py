@@ -6,7 +6,12 @@ import torch
 import os
 from utils.config_util import configGetter
 from utils.arg_parsers import train_arg_parser
+import wandb 
+from datetime import datetime
 
+
+
+torch.set_float32_matmul_precision('high')
 # Parse arguments first so they can be used later
 args = train_arg_parser()
 
@@ -15,24 +20,44 @@ lr = cfg['LR']
 batch_size = cfg['BATCH_SIZE']
 epoch = cfg['EPOCH']
 
+
+# import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint
+
 def main(args):
     pl.seed_everything(42)
+    
+    # Force wandb to be online mode
+    os.environ['WANDB_MODE'] = 'online'
+    
     m = model_resnet()
     model = captcha_model(
         model=m, lr=lr)
     dm = captcha_dm(batch_size=batch_size)
-
-    wandb_logger = pl.loggers.WandbLogger(
-        project="captcha",
-        offline=False,
-        name=args.exp_name
-    )
+    add_time_str = datetime.now().strftime("%Y%m%d_%H%M")
+    # setting để wandb chỉ lưu online mode
+    os.environ['WANDB_MODE'] = 'online'
+    wandb.init(project="captcha", group="captcha_tuning", name=f'exp_{add_time_str}')
         
     trainer = pl.Trainer(deterministic=True,
-                         precision='bf16-mixed',  
+                         precision='bf16-mixed', 
                          fast_dev_run=False,
                          max_epochs=epoch,
-                         log_every_n_steps=50
+                         log_every_n_steps=1000,
+                         callbacks=[
+                             ModelCheckpoint(
+                                 monitor='val_acc', 
+                                 mode='max',
+                                 save_top_k=1,
+                                 filename='../{val_acc:.2f}_best_val_acc-{epoch:02d}'
+                             ),
+                             ModelCheckpoint(
+                                 monitor='train_acc',
+                                 mode='max',
+                                 save_top_k=1,
+                                 filename='../{train_acc:.2f}_best_train_acc-{epoch:02d}'
+                             )
+                         ]
                         )
     
     trainer.fit(model, datamodule=dm)

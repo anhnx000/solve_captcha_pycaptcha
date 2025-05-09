@@ -11,7 +11,7 @@ def train_arg_parser():
 
 def test_arg_parser():
     parser = ArgumentParser()
-    parser.add_argument("--test_name", default='test1')
+    parser.add_argument("--test_name", default='test')
     parser.add_argument("--log_dir", default='./logs/')
     parser.add_argument("--ckpt", default='./logs/main/version_2/checkpoints/epoch=4-step=1954.ckpt')
     args = parser.parse_args()
