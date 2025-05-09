@@ -33,7 +33,7 @@ def main(args):
     m = model_resnet()
     model = captcha_model(
         model=m, lr=lr)
-    dm = captcha_dm(batch_size=batch_size)
+    dm = captcha_dm(batch_size=batch_size, num_workers=20)
     add_time_str = datetime.now().strftime("%Y%m%d_%H%M")
     # setting để wandb chỉ lưu online mode
     os.environ['WANDB_MODE'] = 'online'
@@ -43,7 +43,7 @@ def main(args):
                          precision='bf16-mixed', 
                          fast_dev_run=False,
                          max_epochs=epoch,
-                         log_every_n_steps=1000,
+                         log_every_n_steps=100,
                          callbacks=[
                              ModelCheckpoint(
                                  monitor='val_acc', 

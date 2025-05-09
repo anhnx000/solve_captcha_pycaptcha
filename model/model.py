@@ -35,10 +35,18 @@ class captcha_model(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
-        self.log("train_loss", loss.item(), on_step=True, on_epoch=True, prog_bar=True)
         eval_acc_score = eval_acc(label, y)
+        self.log("train_loss", loss.item(), on_step=True, on_epoch=True, prog_bar=True)
         self.log("train_acc", eval_acc_score, on_step=True, on_epoch=True, prog_bar=True)
+        
+        # Log directly using wandb
         wandb.log({"train_loss": loss.item(), "train_acc": eval_acc_score})
+        
+        # Check if optimizer exists before logging learning rate
+        # Note: In PyTorch Lightning, you can get optimizer through trainer
+        # if self.trainer and hasattr(self.trainer, 'optimizers') and self.trainer.optimizers:
+        wandb.log({"learning_rate": self.trainer.optimizers[0].param_groups[0]['lr']})
+        
         return loss
 
     def validation_step(self, batch, batch_idx):

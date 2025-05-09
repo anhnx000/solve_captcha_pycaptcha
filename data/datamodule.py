@@ -4,7 +4,7 @@ from pytorch_lightning import LightningDataModule
 from data.dataset import captcha_dataset
 from torch.utils.data import DataLoader
 import torch 
-
+import torchvision.transforms as transforms
 class captcha_dm(LightningDataModule):
     def __init__(self, batch_size=20, num_workers=8):
         super(captcha_dm,self).__init__()
@@ -25,6 +25,7 @@ class captcha_dm(LightningDataModule):
         # self.test_dataset = torch.utils.data.ConcatDataset([test_dataset_1, test_dataset_2])
     
     def train_dataloader(self):
+
         return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
     
     def val_dataloader(self):

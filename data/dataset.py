@@ -33,9 +33,17 @@ class captcha_dataset(data.Dataset):
         self.data_path = data_path
         self.data_list = os.listdir(self.data_path)
         self.transform = transforms.Compose([
-            transforms.Resize((HEIGHT, WIDTH)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                # center crop 90% 
+                transforms.CenterCrop(0.95),
+                # random rotation 10 degree
+                transforms.RandomRotation(5),
+                # random affine 
+                transforms.RandomAffine(0, scale=(0.95, 1.05), shear=5),
+                
+                transforms.Resize((HEIGHT, WIDTH)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
         ])
 
     def __getitem__(self, index):
