@@ -8,7 +8,7 @@ from utils.config_util import configGetter
 from utils.arg_parsers import train_arg_parser
 import wandb 
 from datetime import datetime
-
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 torch.set_float32_matmul_precision('high')
@@ -21,8 +21,8 @@ batch_size = cfg['BATCH_SIZE']
 epoch = cfg['EPOCH']
 
 
+
 # import ModelCheckpoint
-from pytorch_lightning.callbacks import ModelCheckpoint
 
 def main(args):
     pl.seed_everything(42)

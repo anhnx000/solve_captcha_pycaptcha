@@ -83,8 +83,14 @@ class captcha_model(pl.LightningModule):
 class model_resnet(torch.nn.Module):
     def __init__(self):
         super(model_resnet, self).__init__()
-        self.resnet = models.resnet18(weights=False)
-        self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
+        # self.resnet = models.resnet34(weights=True)
+        # self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
+
+
+        # use EfficientNetV2-S
+        self.resnet = models.efficientnet_v2_s(weights=True)
+        self.resnet.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
+
 
     def forward(self, x):
         x = self.resnet(x)

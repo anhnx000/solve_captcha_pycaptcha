@@ -4,9 +4,11 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 from PIL import Image
+import PIL
 import os
 from torchvision.transforms.transforms import Resize
 from utils.config_util import configGetter
+from torch.utils.data import DataLoader
 
 cfg = configGetter('DATASET')
 
@@ -47,10 +49,24 @@ class captcha_dataset(data.Dataset):
         ])
 
     def __getitem__(self, index):
-        img_path = os.path.join(self.data_path, self.data_list[index])
-        img = self.transform(Image.open(img_path))
-        label = self.data_list[index].split('.')[0]
-        return img, str_to_vec(label)
+        # Thử lấy ảnh với index hiện tại, nếu lỗi thì thử lấy ảnh tiếp theo
+        max_retries = 10  # Số lần thử tối đa
+        for attempt in range(max_retries):
+            try:
+                idx = (index + attempt) % len(self.data_list)  # Tránh vượt quá giới hạn
+                img_path = os.path.join(self.data_path, self.data_list[idx])
+                img = self.transform(Image.open(img_path))
+                label = self.data_list[idx].split('.')[0]
+                return img, str_to_vec(label)
+            except (PIL.UnidentifiedImageError, OSError, IOError) as e:
+                print(f"Lỗi khi load {img_path}, thử lại: {e}")
+                continue
+        
+        # Nếu tất cả các lần thử đều thất bại, trả về một mẫu mặc định hoặc raise lỗi
+        # Hoặc có thể tạo một ảnh trắng với kích thước đúng
+        blank_img = torch.zeros(3, HEIGHT, WIDTH)
+        blank_label = str_to_vec("0")  # hoặc một nhãn mặc định phù hợp
+        return blank_img, blank_label
 
     def __len__(self):
         return len(self.data_list)
@@ -100,8 +116,24 @@ def str_to_vec(s: str):
 
 
 if __name__ == '__main__':
-    d = captcha_dataset('train')
-    import random 
-    i = random.randint(0, len(d))
-    a = d[i]
-    print(a[0].size(), a[1].size(), lst_to_str(a[1]))
+    train_dataset_1  = captcha_dataset('train')
+    print("len of train_dataset_1: ", len(train_dataset_1))
+    train_dataset_2  = captcha_dataset('../dataset_real/train')
+    print("len of train_dataset_2: ", len(train_dataset_2))
+    train_dataset_3 = torch.utils.data.ConcatDataset([train_dataset_2] * 250)
+    print("len of train_dataset_3: ", len(train_dataset_3))
+    train_dataset = torch.utils.data.ConcatDataset([train_dataset_1, train_dataset_3])
+    print("len of train_dataset: ", len(train_dataset))
+
+    dataloader = DataLoader(
+        train_dataset,
+        batch_size=32,
+        num_workers=4,
+        shuffle=True,
+        pin_memory=True,
+        drop_last=True,
+        persistent_workers=True,
+        timeout=60,
+    )
+
+    
