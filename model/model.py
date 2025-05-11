@@ -88,7 +88,7 @@ class model_resnet(torch.nn.Module):
         # self.resnet = models.resnet18(weights=False)
         # self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
         
-        self.resnet = models.resnext50_32x4d(weights=True)
+        self.resnet = models.resnext101_32x8d(weights=True)
         self.resnet.fc = nn.Linear(2048, CHAR_LEN*CLASS_NUM)
 
 
