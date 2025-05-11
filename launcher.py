@@ -1,4 +1,4 @@
-from model.model import captcha_model, model_conv, model_resnet
+from model.model import captcha_model, model_conv, model_resnet, model_efficientnet, model_vit, model_mobilenet
 from data.datamodule import captcha_dm
 import pytorch_lightning as pl
 import torch.optim as optim
@@ -30,7 +30,16 @@ def main(args):
     # Force wandb to be online mode
     os.environ['WANDB_MODE'] = 'online'
     
-    m = model_resnet()
+    if args.model_name == 'resnet':
+        m  = model_resnet()
+    elif args.model_name == 'efficientnet':
+        m  = model_efficientnet()
+    elif args.model_name == 'vit':
+        m  = model_vit()
+    elif args.model_name == 'mobilenet':
+        m  = model_mobilenet()
+        
+    
     model = captcha_model(
         model=m, lr=lr)
     dm = captcha_dm(batch_size=batch_size, num_workers=20)

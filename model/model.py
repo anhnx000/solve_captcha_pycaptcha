@@ -83,13 +83,13 @@ class captcha_model(pl.LightningModule):
 class model_resnet(torch.nn.Module):
     def __init__(self):
         super(model_resnet, self).__init__()
-        # self.resnet = models.resnet34(weights=True)
-        # self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
+        self.resnet = models.resnet18(weights=True)
+        self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
 
 
-        # use EfficientNetV2-S
-        self.resnet = models.efficientnet_v2_s(weights=True)
-        self.resnet.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
+        # # use EfficientNetV2-S
+        # self.resnet = models.efficientnet_v2_s(weights=True)
+        # self.resnet.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
 
 
     def forward(self, x):
@@ -97,7 +97,54 @@ class model_resnet(torch.nn.Module):
         x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
         return x
 
+class model_efficientnet(torch.nn.Module):
+    def __init__(self):
+        super(model_efficientnet, self).__init__()
+        self.efficientnet = models.efficientnet_v2_s(weights=True)
+        self.efficientnet.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
 
+    def forward(self, x):
+        x = self.efficientnet(x)
+        x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
+        return x
+    
+
+class model_vit(torch.nn.Module):
+    # use MobileViT-S
+    def __init__(self):
+        super(model_vit, self).__init__()
+        self.vit = models.mobilevit_s(weights=True)
+        self.vit.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
+
+    def forward(self, x):
+        x = self.vit(x)
+        x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
+        return x
+    
+     
+class model_mobilenet(torch.nn.Module):
+    def __init__(self):
+        super(model_mobilenet, self).__init__()
+        self.mobilenet = models.mobilenet_v3_large(weights=True)
+        self.mobilenet.classifier = nn.Linear(960, CHAR_LEN*CLASS_NUM)
+
+    def forward(self, x):
+        x = self.mobilenet(x)
+        x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
+        return x
+     
+     
+     
+
+     
+     
+     
+     
+     
+     
+     
+     
+        
 class model_conv(torch.nn.Module):
     def __init__(self):
         super().__init__()

@@ -6,6 +6,7 @@ def train_arg_parser():
     parser.add_argument("--gpus", default=0)
     parser.add_argument("--log_dir", default='./logs/')
     parser.add_argument("--save_path", default='./checkpoint/')
+    parser.add_argument("--model_name", default='resnet18') # resnet18, resnet34, EfficientNetV2-S, vit, mobilenet
     args = parser.parse_args()
     return args
 
