@@ -7,6 +7,7 @@ def train_arg_parser():
     parser.add_argument("--log_dir", default='./logs/')
     parser.add_argument("--save_path", default='./checkpoint/')
     parser.add_argument("--model_name", default='resnet18') # resnet18, resnet34, EfficientNetV2-S, vit, mobilenet
+    parser.add_argument("--resume_from_checkpoint", default=None, help="Path to checkpoint file to resume training from")
     args = parser.parse_args()
     return args
 

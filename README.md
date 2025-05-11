@@ -39,6 +39,19 @@ conda install torch==1.9.0 torchvision==0.10.0 -c pytorch
 pip install -r requirement.txt
 ```
 
+## Usage 🚀
+
+### Training
+```shell
+python launcher.py --model_name resnet
+```
+
+### Resuming Training from a Checkpoint
+You can continue training from a previously saved checkpoint:
+```shell
+python launcher.py --model_name resnet --resume_from_checkpoint ./checkpoint/your_checkpoint_file.ckpt
+```
+
 ## Docment 📃
 > Checkout the PyCAPTCHA Usage in WIKI Page
   

@@ -47,27 +47,38 @@ def main(args):
     # setting để wandb chỉ lưu online mode
     os.environ['WANDB_MODE'] = 'online'
     wandb.init(project="captcha", group="captcha_tuning", name=f'exp_{add_time_str}')
+    
+    # Setup model checkpoint callbacks
+    checkpoint_callbacks = [
+        ModelCheckpoint(
+            monitor='val_acc', 
+            mode='max',
+            save_top_k=1,
+            filename='../{val_acc:.2f}_best_val_acc-{epoch:02d}'
+        ),
+        ModelCheckpoint(
+            monitor='train_acc',
+            mode='max',
+            save_top_k=1,
+            filename='../{train_acc:.2f}_best_train_acc-{epoch:02d}'
+        )
+    ]
+    
+    trainer_kwargs = {
+        'deterministic': True,
+        'precision': 'bf16-mixed',
+        'fast_dev_run': False,
+        'max_epochs': epoch,
+        'log_every_n_steps': 100,
+        'callbacks': checkpoint_callbacks
+    }
+    
+    # If checkpoint path is provided, use it to resume training
+    if args.resume_from_checkpoint:
+        print(f"Resuming training from checkpoint: {args.resume_from_checkpoint}")
+        trainer_kwargs['ckpt_path'] = args.resume_from_checkpoint
         
-    trainer = pl.Trainer(deterministic=True,
-                         precision='bf16-mixed', 
-                         fast_dev_run=False,
-                         max_epochs=epoch,
-                         log_every_n_steps=100,
-                         callbacks=[
-                             ModelCheckpoint(
-                                 monitor='val_acc', 
-                                 mode='max',
-                                 save_top_k=1,
-                                 filename='../{val_acc:.2f}_best_val_acc-{epoch:02d}'
-                             ),
-                             ModelCheckpoint(
-                                 monitor='train_acc',
-                                 mode='max',
-                                 save_top_k=1,
-                                 filename='../{train_acc:.2f}_best_train_acc-{epoch:02d}'
-                             )
-                         ]
-                        )
+    trainer = pl.Trainer(**trainer_kwargs)
     
     trainer.fit(model, datamodule=dm)
     os.makedirs(args.save_path, exist_ok=True)
