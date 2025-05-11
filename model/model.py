@@ -39,14 +39,16 @@ class captcha_model(pl.LightningModule):
         self.log("train_loss", loss.item(), on_step=True, on_epoch=True, prog_bar=True)
         self.log("train_acc", eval_acc_score, on_step=True, on_epoch=True, prog_bar=True)
         
-        # Log directly using wandb
-        wandb.log({"train_loss": loss.item(), "train_acc": eval_acc_score})
         
-        # Check if optimizer exists before logging learning rate
-        # Note: In PyTorch Lightning, you can get optimizer through trainer
-        # if self.trainer and hasattr(self.trainer, 'optimizers') and self.trainer.optimizers:
-        wandb.log({"learning_rate": self.trainer.optimizers[0].param_groups[0]['lr']})
-        
+        if batch_idx % 100 == 0:
+            # Log directly using wandb
+            wandb.log({"train_loss": loss.item(), "train_acc": eval_acc_score})
+            
+            # Check if optimizer exists before logging learning rate
+            # Note: In PyTorch Lightning, you can get optimizer through trainer
+            # if self.trainer and hasattr(self.trainer, 'optimizers') and self.trainer.optimizers:
+            wandb.log({"learning_rate": self.trainer.optimizers[0].param_groups[0]['lr']})
+            
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -83,7 +85,7 @@ class captcha_model(pl.LightningModule):
 class model_resnet(torch.nn.Module):
     def __init__(self):
         super(model_resnet, self).__init__()
-        self.resnet = models.resnet18(weights=True)
+        self.resnet = models.resnet18(weights=False)
         self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
 
 
@@ -185,3 +187,16 @@ class model_conv(torch.nn.Module):
         x = self.fc(x)
         x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
         return x
+
+if __name__ == "__main__":
+    # Create a properly shaped 3D tensor (CHAR_LEN x batchsize x CLASS_NUM)
+    pred = torch.zeros(5, 1, 10)  # Assuming CHAR_LEN=5, batchsize=1, CLASS_NUM=10
+    
+    # Set the highest probability for each character
+    for i in range(5):
+        pred[i, 0, i+1] = 1.0
+    
+    # Create a label tensor (CHAR_LEN x batchsize)
+    label = torch.tensor([[1, 2, 3, 3, 5]]).transpose(0, 1)  # Shape: 5x1
+    
+    print(eval_acc(label, pred))

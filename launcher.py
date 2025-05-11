@@ -11,7 +11,7 @@ from datetime import datetime
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 
-torch.set_float32_matmul_precision('high')
+torch.set_float32_matmul_precision('medium')
 # Parse arguments first so they can be used later
 args = train_arg_parser()
 
@@ -66,7 +66,7 @@ def main(args):
     
     trainer_kwargs = {
         'deterministic': True,
-        'precision': 'bf16-mixed',
+        'precision': 'bf16',
         'fast_dev_run': False,
         'max_epochs': epoch,
         'log_every_n_steps': 100,
