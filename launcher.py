@@ -66,7 +66,7 @@ def main(args):
     
     trainer_kwargs = {
         'deterministic': True,
-        'precision': 'fp16',
+        'precision': '16-mixed',
         'fast_dev_run': False,
         'max_epochs': epoch,
         'log_every_n_steps': 100,
