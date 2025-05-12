@@ -52,7 +52,7 @@ def main(args):
     
     # Add CTC to experiment name if using CTC loss
     exp_name = f'exp_ctc_{add_time_str}' if args.use_ctc else f'exp_{add_time_str}'
-    wandb.init(project="captcha", group="captcha_tuning", name=exp_name)
+    wandb.init(project="captcha", group="ctc_loss", name=exp_name)
     
     # Setup model checkpoint callbacks
     checkpoint_callbacks = [
@@ -71,7 +71,7 @@ def main(args):
     ]
     
     trainer_kwargs = {
-        'deterministic': True,
+        'deterministic': 'warn',
         'precision': precision_setting, # Read from config
         'fast_dev_run': False,
         'max_epochs': epoch,

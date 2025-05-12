@@ -163,17 +163,16 @@ class model_efficientnet(torch.nn.Module):
     
 
 class model_vit(torch.nn.Module):
-    # use MobileViT-S
+    # use vision transformer  ocr pretrain on ocr dataset
     def __init__(self):
         super(model_vit, self).__init__()
-        self.vit = models.mobilevit_s(weights=True)
-        self.vit.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
+        self.vit = models.vit_b_16(weights=True)
+        self.vit.heads = nn.Linear(768, CHAR_LEN*CLASS_NUM)
 
     def forward(self, x):
         x = self.vit(x)
         x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
         return x
-    
      
 class model_mobilenet(torch.nn.Module):
     def __init__(self):

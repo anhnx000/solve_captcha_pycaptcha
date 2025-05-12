@@ -11,15 +11,16 @@ DATASET:
 
   CAPTCHA:
     FONT_DIR: './fonts/font1.ttf'
-    IMG_HEIGHT: 50
-    IMG_WIDTH: 200
+    IMG_HEIGHT: 224
+    IMG_WIDTH: 224
+
     CLASS_NUM: 101 # 100 is padding token, so we should have 101 class num   
-    CHAR_LEN: 5
+    CHAR_LEN: 4
 
 
 SOLVER:
   LR: 5.0e-4
-  BATCH_SIZE: 256
+  BATCH_SIZE: 128
   EPOCH: 10_000
 
 

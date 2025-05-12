@@ -99,7 +99,8 @@ def generate_centered_captcha(text, width=200, height=50):
 def captchaGenerator(dataset_path, dataset_len, captcha_len=None):
     # Random captcha length between 3 and 5
     if captcha_len is None:
-        captcha_len = random.randint(3, 5)
+        # captcha_len = random.randint(3, 5)
+        captcha_len = 4
     
     os.makedirs(dataset_path, exist_ok=True)
     
