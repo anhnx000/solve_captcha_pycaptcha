@@ -15,7 +15,7 @@ DATASET:
     IMG_WIDTH: 224
 
     CLASS_NUM: 101 # 100 is padding token, so we should have 101 class num   
-    CHAR_LEN: 4
+    CHAR_LEN: 5
 
 
 SOLVER:

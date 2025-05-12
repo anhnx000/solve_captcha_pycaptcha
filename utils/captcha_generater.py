@@ -92,7 +92,7 @@ def generate_centered_captcha(text, width=200, height=50):
         y1 = random.randint(0, height)
         x2 = random.randint(0, width)
         y2 = random.randint(0, height)
-        draw.line((x1, y1, x2, y2), fill='black', width=1)
+        draw.line((x1, y1, x2, y2), fill='black', width=1)ter
 
     return final_image
 
@@ -100,7 +100,7 @@ def captchaGenerator(dataset_path, dataset_len, captcha_len=None):
     # Random captcha length between 3 and 5
     if captcha_len is None:
         # captcha_len = random.randint(3, 5)
-        captcha_len = 4
+        captcha_len = 5
     
     os.makedirs(dataset_path, exist_ok=True)
     
