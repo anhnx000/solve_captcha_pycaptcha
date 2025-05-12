@@ -14,11 +14,15 @@ def eval_acc(label, pred):
     return eq.sum()/eq.size(0)
 
 class captcha_model(pl.LightningModule):
-    def __init__(self, model, lr=1e-4, optimizer=None):
+    def __init__(self, model, lr=1e-4, optimizer=None, use_ctc=False):
         super(captcha_model, self).__init__()
         self.model = model
         self.lr = lr
         self.optimizer = optimizer
+        self.use_ctc = use_ctc
+        
+        # Add a blank token for CTC loss (using the last class index)
+        self.blank_index = CLASS_NUM
 
     def forward(self, x):
         x = self.model(x)
@@ -26,12 +30,51 @@ class captcha_model(pl.LightningModule):
 
     def step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self(x).permute(1, 0, 2)
-        y = y.permute(1, 0)
-        loss = 0
-        for i in range(CHAR_LEN):
-            loss += F.cross_entropy(y_hat[i], y[i])
-        return loss, y, y_hat
+        y_hat = self(x)
+        
+        if self.use_ctc:
+            # For CTC loss, reshape the output:
+            # [batch_size, CHAR_LEN, CLASS_NUM] -> [CHAR_LEN, batch_size, CLASS_NUM+1]
+            # Add one extra dimension for blank token
+            log_probs = F.log_softmax(y_hat, dim=2)
+            
+            # Add blank token probability column
+            blank_probs = torch.zeros(log_probs.shape[0], log_probs.shape[1], 1).to(log_probs.device)
+            log_probs_with_blank = torch.cat([log_probs, blank_probs], dim=2)
+            
+            # Reshape for CTC: [batch_size, CHAR_LEN, CLASS_NUM+1] -> [CHAR_LEN, batch_size, CLASS_NUM+1]
+            log_probs_with_blank = log_probs_with_blank.permute(1, 0, 2)
+            
+            # Convert targets to proper format for CTC
+            y = y.permute(1, 0)  # [CHAR_LEN, batch_size]
+            
+            # Calculate input lengths (all the same: CHAR_LEN)
+            input_lengths = torch.full((x.size(0),), CHAR_LEN, dtype=torch.long).to(y.device)
+            
+            # Calculate target lengths (all the same: CHAR_LEN)
+            target_lengths = torch.full((x.size(0),), CHAR_LEN, dtype=torch.long).to(y.device)
+            
+            # Flatten labels
+            y_flat = y.reshape(-1)
+            
+            # Calculate CTC loss
+            loss = F.ctc_loss(
+                log_probs_with_blank, y_flat, input_lengths, target_lengths,
+                blank=self.blank_index, reduction='mean', zero_infinity=True
+            )
+            
+            # For accuracy calculation, convert back to original format
+            y_hat_permuted = log_probs.permute(1, 0, 2)
+            
+            return loss, y, y_hat_permuted
+        else:
+            # Original implementation without CTC
+            y_hat_permuted = y_hat.permute(1, 0, 2)
+            y_permuted = y.permute(1, 0)
+            loss = 0
+            for i in range(CHAR_LEN):
+                loss += F.cross_entropy(y_hat_permuted[i], y_permuted[i])
+            return loss, y_permuted, y_hat_permuted
 
     def training_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
@@ -64,10 +107,15 @@ class captcha_model(pl.LightningModule):
         self.log("test_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
         eval_acc_score = eval_acc(label, y)
         self.log("test_acc", eval_acc_score, on_step=False, on_epoch=True, prog_bar=True)
-        wandb.log({"test_loss": loss.item(), "test_acc": eval_acc})
+        wandb.log({"test_loss": loss.item(), "test_acc": eval_acc_score})
         if batch_idx == 0:
-            label = label.permute(1, 0)
-            y = y.permute(1, 0, 2)
+            if self.use_ctc:
+                # Convert back to [batch_size, CHAR_LEN] for display
+                label = label.permute(1, 0) if label.dim() > 1 else label.unsqueeze(0)
+                y = y.permute(1, 0, 2) if y.dim() > 2 else y.unsqueeze(0)
+            else:
+                label = label.permute(1, 0)
+                y = y.permute(1, 0, 2)
             pred = y.argmax(dim=2)
             res = [f"pred:{lst_to_str(pred[i])}, true:{lst_to_str(label[i])}" for i in range(pred.size(0))]
             print("\n".join(res))

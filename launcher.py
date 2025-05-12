@@ -15,11 +15,14 @@ torch.set_float32_matmul_precision('medium')
 # Parse arguments first so they can be used later
 args = train_arg_parser()
 
-cfg  = configGetter('SOLVER')
-lr = cfg['LR']
-batch_size = cfg['BATCH_SIZE']
-epoch = cfg['EPOCH']
+# Load configurations
+cfg_solver = configGetter('SOLVER')
+lr = cfg_solver['LR']
+batch_size = cfg_solver['BATCH_SIZE']
+epoch = cfg_solver['EPOCH']
 
+cfg_trainer = configGetter('TRAINER')
+precision_setting = cfg_trainer['PRECISION']
 
 
 # import ModelCheckpoint
@@ -41,12 +44,15 @@ def main(args):
         
     
     model = captcha_model(
-        model=m, lr=lr)
+        model=m, lr=lr, use_ctc=args.use_ctc)
     dm = captcha_dm(batch_size=batch_size, num_workers=20)
     add_time_str = datetime.now().strftime("%Y%m%d_%H%M")
     # setting để wandb chỉ lưu online mode
     os.environ['WANDB_MODE'] = 'online'
-    wandb.init(project="captcha", group="captcha_tuning", name=f'exp_{add_time_str}')
+    
+    # Add CTC to experiment name if using CTC loss
+    exp_name = f'exp_ctc_{add_time_str}' if args.use_ctc else f'exp_{add_time_str}'
+    wandb.init(project="captcha", group="captcha_tuning", name=exp_name)
     
     # Setup model checkpoint callbacks
     checkpoint_callbacks = [
@@ -66,7 +72,7 @@ def main(args):
     
     trainer_kwargs = {
         'deterministic': True,
-        'precision': '16-mixed',
+        'precision': precision_setting, # Read from config
         'fast_dev_run': False,
         'max_epochs': epoch,
         'log_every_n_steps': 100,

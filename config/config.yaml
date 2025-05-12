@@ -3,21 +3,32 @@ DATASET:
   TRAINING_DIR: './dataset/train'
   TESTING_DIR: './dataset/val'
 
+
   TRAINING_DATASET_LEN: 1_000 # Change this to 100k may get better performance
   TESTING_DATASET_LEN: 100
 
+
+
   CAPTCHA:
     FONT_DIR: './fonts/font1.ttf'
-    IMG_HEIGHT: 60
-    IMG_WIDTH: 160
+    IMG_HEIGHT: 50
+    IMG_WIDTH: 200
     CLASS_NUM: 101 # 100 is padding token, so we should have 101 class num   
     CHAR_LEN: 5
+
 
 SOLVER:
   LR: 5.0e-4
   BATCH_SIZE: 256
   EPOCH: 10_000
 
+
+
 LOGGER:
   CHECKPOINT_DIR: './checkpoint'
   LOG_DIR: './logs'
+
+
+TRAINER:
+  PRECISION: '16-mixed'
+

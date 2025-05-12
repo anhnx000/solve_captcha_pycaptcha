@@ -6,10 +6,10 @@ import wandb
 
 def test(args):
     dm = captcha_dm()
-    model = captcha_model.load_from_checkpoint(args.ckpt, model=model_resnet())
+    model = captcha_model.load_from_checkpoint(args.ckpt, model=model_resnet(), use_ctc=args.use_ctc)
     wandb_logger = pl.loggers.WandbLogger(
         project="captcha-test",
-        name=args.test_name,
+        name=args.test_name + "_ctc" if args.use_ctc else args.test_name,
         save_dir=args.log_dir,
         version=2
     )
