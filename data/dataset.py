@@ -85,14 +85,14 @@ def str_to_lst(s: str):
             lst.append(ord(c) - ord('A') + 36)
     
     if len(lst) < CHAR_LEN:
-        lst.extend([100] * (CHAR_LEN - len(lst)))
+        lst.extend([63] * (CHAR_LEN - len(lst)))
     return lst
 
 
 def lst_to_str(lst: list):
     s = ''
     for i in lst:
-        if i == 100:  # Padding token
+        if i == 63:  # Padding token
             continue
         elif i < 10:
             s += chr(i + ord('0'))
@@ -101,7 +101,7 @@ def lst_to_str(lst: list):
         elif i < 62:
             s += chr(i + ord('A') - 36)
     if len(s) < CHAR_LEN:
-        s = s + ' ' * (CHAR_LEN - len(s))
+        s = s + '_' * (CHAR_LEN - len(s))
     
     return s
 
