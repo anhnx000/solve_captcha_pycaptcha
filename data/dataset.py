@@ -36,11 +36,11 @@ class captcha_dataset(data.Dataset):
         self.data_list = os.listdir(self.data_path)
         self.transform = transforms.Compose([
                 # center crop 90% 
-                transforms.CenterCrop(0.95),
+                transforms.CenterCrop(0.99),
                 # random rotation 10 degree
-                transforms.RandomRotation(5),
+                transforms.RandomRotation(2),
                 # random affine 
-                transforms.RandomAffine(0, scale=(0.95, 1.05), shear=5),
+                transforms.RandomAffine(0, scale=(0.97, 1.02), shear=5),
                 
                 transforms.Resize((HEIGHT, WIDTH)),
                 transforms.ToTensor(),
@@ -56,7 +56,9 @@ class captcha_dataset(data.Dataset):
                 idx = (index + attempt) % len(self.data_list)  # Tránh vượt quá giới hạn
                 img_path = os.path.join(self.data_path, self.data_list[idx])
                 img = self.transform(Image.open(img_path))
-                label = self.data_list[idx].split('.')[0]
+                # label = self.data_list[idx].split('.')[0]
+                label = self.data_list[idx].split('.')[0].lower() 
+                
                 return img, str_to_vec(label)
             except (PIL.UnidentifiedImageError, OSError, IOError) as e:
                 print(f"Lỗi khi load {img_path}, thử lại: {e}")

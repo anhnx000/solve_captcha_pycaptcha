@@ -34,7 +34,7 @@ def generate_centered_captcha(text, width=200, height=50):
         font = ImageFont.load_default()
 
     # Reduce space between characters
-    char_spacing = 15
+    char_spacing = 16
 
     # Calculate total width based on number of characters
     total_text_width = len(text) * char_spacing
