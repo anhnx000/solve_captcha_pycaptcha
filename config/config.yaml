@@ -23,6 +23,7 @@ SOLVER:
   EPOCH: 10_000
 
 
+
 LOGGER:
   CHECKPOINT_DIR: './checkpoint'
   LOG_DIR: './logs'
