@@ -4,9 +4,8 @@ DATASET:
   TESTING_DIR: './dataset/val'
 
 
-  TRAINING_DATASET_LEN: 20 # Change this to 100k may get better performance
-  TESTING_DATASET_LEN: 5
-
+  TRAINING_DATASET_LEN: 50_000 # Change this to 100k may get better performance
+  TESTING_DATASET_LEN: 1_000
 
 
   CAPTCHA:
@@ -14,15 +13,14 @@ DATASET:
     IMG_HEIGHT: 224
     IMG_WIDTH: 224
 
-    CLASS_NUM: 101 # 100 is padding token, so we should have 101 class num   
+    CLASS_NUM:  63
     CHAR_LEN: 5
 
 
 SOLVER:
-  LR: 5.0e-4
-  BATCH_SIZE: 4
+  LR: 5.0e-5
+  BATCH_SIZE: 32
   EPOCH: 10_000
-
 
 
 LOGGER:

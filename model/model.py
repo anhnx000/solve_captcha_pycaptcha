@@ -86,20 +86,22 @@ class captcha_model(pl.LightningModule):
         # Ensure logs directory exists
         os.makedirs('./logs', exist_ok=True)
        
-        if batch_idx == 0:
-            if os.path.exists('./logs/train_label_y.txt'):
-                with open('./logs/train_label_y.txt', 'a') as f:
-                    f.write(f"****************************\n")
-                    f.write(f"label: {label[1]}\n")
-                    f.write(f"----------------------------\n")
-                    f.write(f"y: {y_pred[1]}\n")
+        # if batch_idx == 0:
+        #     if os.path.exists('./logs/train_label_y.txt'):
+        #         with open('./logs/train_label_y.txt', 'a') as f:
+        #             f.write(f"****************************\n")
+        #             f.write(f"label: {label[1]}\n")
+        #             f.write(f"----------------------------\n")
+        #             f.write(f"y: {y_pred[1]}\n")
             
-            else:
-                with open('./logs/train_label_y.txt', 'w') as f:
-                    f.write(f"****************************\n")
-                    f.write(f"label: {label[1]}\n")
-                    f.write(f"----------------------------\n")
-                    f.write(f"y: {y_pred[1]}\n")
+        #     else:
+        #         with open('./logs/train_label_y.txt', 'w') as f:
+        #             f.write(f"****************************\n")
+        #             f.write(f"label: {label[1]}\n")
+        #             f.write(f"----------------------------\n")
+        #             f.write(f"y: {y_pred[1]}\n")
+        
+        
         eval_acc_score = eval_acc(label, y_pred)
         self.log("train_loss", loss.item(), on_step=True, on_epoch=True, prog_bar=True)
         self.log("train_acc", eval_acc_score, on_step=True, on_epoch=True, prog_bar=True)
@@ -124,19 +126,19 @@ class captcha_model(pl.LightningModule):
         # Ensure logs directory exists
         os.makedirs('./logs', exist_ok=True)
         
-        if batch_idx == 0:
-            if os.path.exists('./logs/val_label_y.txt'):
-                with open('./logs/val_label_y.txt', 'a') as f:
-                    f.write(f"****************************\n")
-                    f.write(f"label: \n{label[1]}\n")
-                    f.write(f"----------------------------\n")
-                    f.write(f"y: \n{y[1]}\n")
-            else:
-                with open('./logs/val_label_y.txt', 'w') as f:
-                    f.write(f"****************************\n")
-                    f.write(f"label: \n{label[1]}\n")
-                    f.write(f"----------------------------\n")
-                    f.write(f"y: \n{y[1]}\n")
+        # if batch_idx == 0:
+        #     if os.path.exists('./logs/val_label_y.txt'):
+        #         with open('./logs/val_label_y.txt', 'a') as f:
+        #             f.write(f"****************************\n")
+        #             f.write(f"label: \n{label[1]}\n")
+        #             f.write(f"----------------------------\n")
+        #             f.write(f"y: \n{y[1]}\n")
+        #     else:
+        #         with open('./logs/val_label_y.txt', 'w') as f:
+        #             f.write(f"****************************\n")
+        #             f.write(f"label: \n{label[1]}\n")
+        #             f.write(f"----------------------------\n")
+        #             f.write(f"y: \n{y[1]}\n")
                 
                 
         eval_acc_score = eval_acc(label, y)
@@ -176,11 +178,11 @@ class captcha_model(pl.LightningModule):
 class model_resnet(torch.nn.Module):
     def __init__(self):
         super(model_resnet, self).__init__()
-        # self.resnet = models.resnet18(weights=False)
-        # self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
+        self.resnet = models.resnet18(weights=False)
+        self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
         
-        self.resnet = models.resnext101_32x8d(weights=True)
-        self.resnet.fc = nn.Linear(2048, CHAR_LEN*CLASS_NUM)
+        # self.resnet = models.resnext101_32x8d(weights=True)
+        # self.resnet.fc = nn.Linear(2048, CHAR_LEN*CLASS_NUM)
 
 
         # # use EfficientNetV2-S
@@ -196,7 +198,7 @@ class model_resnet(torch.nn.Module):
 class model_efficientnet(torch.nn.Module):
     def __init__(self):
         super(model_efficientnet, self).__init__()
-        self.efficientnet = models.efficientnet_v2_s(weights=True)
+        self.efficientnet = models.efficientnet_v2_s(weights=False)
         self.efficientnet.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
 
     def forward(self, x):
@@ -227,10 +229,6 @@ class model_mobilenet(torch.nn.Module):
         x = self.mobilenet(x)
         x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
         return x
-     
-     
-     
-
      
      
      

@@ -8,7 +8,7 @@ from utils.config_util import configGetter
 from utils.arg_parsers import train_arg_parser
 import wandb 
 from datetime import datetime
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, Callback
 
 
 torch.set_float32_matmul_precision('medium')
@@ -24,8 +24,21 @@ epoch = cfg_solver['EPOCH']
 cfg_trainer = configGetter('TRAINER')
 precision_setting = cfg_trainer['PRECISION']
 
+# Custom callback to display training accuracy
+class TrainAccuracyCallback(Callback):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+        if batch_idx % 10 == 0:  # Print every 10 batches
+            metrics = trainer.callback_metrics
+            if 'train acc' in metrics:
+                print(f"Batch {batch_idx}: Train Accuracy: {metrics['train acc']:.4f}")
+    
+    def on_train_epoch_end(self, trainer, pl_module):
+        metrics = trainer.callback_metrics
+        if 'train acc' in metrics:
+            print(f"\nEpoch {trainer.current_epoch} ended: Train Accuracy: {metrics['train acc']:.4f}")
+            if 'val acc' in metrics:
+                print(f"Epoch {trainer.current_epoch} ended: Val Accuracy: {metrics['val acc']:.4f}")
 
-# import ModelCheckpoint
 
 def main(args):
     pl.seed_everything(42)
@@ -67,7 +80,8 @@ def main(args):
             mode='max',
             save_top_k=1,
             filename='../{train_acc:.2f}_best_train_acc-{epoch:02d}'
-        )
+        ),
+        TrainAccuracyCallback()
     ]
     
     trainer_kwargs = {
