@@ -92,7 +92,7 @@ def generate_centered_captcha(text, width=200, height=50):
         y1 = random.randint(0, height)
         x2 = random.randint(0, width)
         y2 = random.randint(0, height)
-        draw.line((x1, y1, x2, y2), fill='black', width=1)ter
+        draw.line((x1, y1, x2, y2), fill='black', width=1)
 
     return final_image
 

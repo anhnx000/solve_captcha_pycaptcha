@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch
 from data.dataset import HEIGHT, WIDTH, CLASS_NUM, CHAR_LEN, lst_to_str
 import wandb
+import os 
 
 def eval_acc(label, pred):
     # label: CHAR_LEN x batchsize
@@ -77,8 +78,29 @@ class captcha_model(pl.LightningModule):
             return loss, y_permuted, y_hat_permuted
 
     def training_step(self, batch, batch_idx):
-        loss, label, y = self.step(batch, batch_idx)
-        eval_acc_score = eval_acc(label, y)
+        loss, label, y_pred = self.step(batch, batch_idx)
+        # log label and y to file './logs/train_label_y.txt'
+      
+        import os
+        
+        # Ensure logs directory exists
+        os.makedirs('./logs', exist_ok=True)
+       
+        if batch_idx == 0:
+            if os.path.exists('./logs/train_label_y.txt'):
+                with open('./logs/train_label_y.txt', 'a') as f:
+                    f.write(f"****************************\n")
+                    f.write(f"label: {label[1]}\n")
+                    f.write(f"----------------------------\n")
+                    f.write(f"y: {y_pred[1]}\n")
+            
+            else:
+                with open('./logs/train_label_y.txt', 'w') as f:
+                    f.write(f"****************************\n")
+                    f.write(f"label: {label[1]}\n")
+                    f.write(f"----------------------------\n")
+                    f.write(f"y: {y_pred[1]}\n")
+        eval_acc_score = eval_acc(label, y_pred)
         self.log("train_loss", loss.item(), on_step=True, on_epoch=True, prog_bar=True)
         self.log("train_acc", eval_acc_score, on_step=True, on_epoch=True, prog_bar=True)
         
@@ -96,8 +118,29 @@ class captcha_model(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
-        self.log("val_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
+        # log label and y to file './logs/val_label_y.txt'
+        import os
+        
+        # Ensure logs directory exists
+        os.makedirs('./logs', exist_ok=True)
+        
+        if batch_idx == 0:
+            if os.path.exists('./logs/val_label_y.txt'):
+                with open('./logs/val_label_y.txt', 'a') as f:
+                    f.write(f"****************************\n")
+                    f.write(f"label: \n{label[1]}\n")
+                    f.write(f"----------------------------\n")
+                    f.write(f"y: \n{y[1]}\n")
+            else:
+                with open('./logs/val_label_y.txt', 'w') as f:
+                    f.write(f"****************************\n")
+                    f.write(f"label: \n{label[1]}\n")
+                    f.write(f"----------------------------\n")
+                    f.write(f"y: \n{y[1]}\n")
+                
+                
         eval_acc_score = eval_acc(label, y)
+        self.log("val_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
         self.log("val_acc", eval_acc_score, on_step=False, on_epoch=True, prog_bar=True)
         wandb.log({"val_loss": loss.item(), "val_acc": eval_acc_score})
         return loss

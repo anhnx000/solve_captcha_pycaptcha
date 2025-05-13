@@ -4,8 +4,8 @@ DATASET:
   TESTING_DIR: './dataset/val'
 
 
-  TRAINING_DATASET_LEN: 1_000 # Change this to 100k may get better performance
-  TESTING_DATASET_LEN: 100
+  TRAINING_DATASET_LEN: 20 # Change this to 100k may get better performance
+  TESTING_DATASET_LEN: 5
 
 
 
@@ -20,7 +20,7 @@ DATASET:
 
 SOLVER:
   LR: 5.0e-4
-  BATCH_SIZE: 128
+  BATCH_SIZE: 4
   EPOCH: 10_000
 
 
