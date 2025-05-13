@@ -5,19 +5,23 @@ from tqdm import trange
 from config_util import configGetter
 from PIL import Image, ImageDraw, ImageFont
 import string
-
+import secrets
 cfg = configGetter('DATASET')
 
 image = ImageCaptcha(fonts=[cfg['CAPTCHA']['FONT_DIR']])
 
-def randomSeqGenerator(captcha_len):
+def randomSeqGenerator(captcha_len_random):
     ret = ""
-    for i in range(captcha_len):
+    for i in range(captcha_len_random):
         num = chr(random.randint(48,57))  # ASCII for numbers
         letter = chr(random.randint(97, 122))  # lowercase letters
         Letter = chr(random.randint(65, 90))  # uppercase letters
         s = str(random.choice([num,letter,Letter]))
         ret += s
+        
+    if len(ret) < 5:
+        for i in range(5 - len(ret)):
+            ret += '_'
     return ret
     
 def generate_centered_captcha(text, width=200, height=50):
@@ -96,17 +100,16 @@ def generate_centered_captcha(text, width=200, height=50):
 
     return final_image
 
-def captchaGenerator(dataset_path, dataset_len, captcha_len=None):
-    # Random captcha length between 3 and 5
-    if captcha_len is None:
-        # captcha_len = random.randint(3, 5)
-        captcha_len = 5
-    
+def captchaGenerator(dataset_path, dataset_len):
+
     os.makedirs(dataset_path, exist_ok=True)
     
     for i in trange(dataset_len):
+        
+        captcha_len_random = secrets.choice([3, 4, 5])
+        
         # Generate random character sequence
-        char_seq = randomSeqGenerator(captcha_len)
+        char_seq = randomSeqGenerator(captcha_len_random)
         
         # Generate captcha image
         captcha_image = generate_centered_captcha(char_seq)

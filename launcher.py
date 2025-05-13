@@ -41,7 +41,7 @@ class TrainAccuracyCallback(Callback):
 
 
 def main(args):
-    pl.seed_everything(42)
+    # pl.seed_everything(42)
     
     # Force wandb to be online mode
     os.environ['WANDB_MODE'] = 'online'

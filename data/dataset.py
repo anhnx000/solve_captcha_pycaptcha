@@ -18,22 +18,35 @@ CHAR_LEN = cfg['CAPTCHA']['CHAR_LEN']
 
 
 class captcha_dataset(data.Dataset):
-    def __init__(self, data_type: str) -> None:
+    def __init__(self, data_path_tail: str) -> None:
         super().__init__()
-        if data_type == 'train':
-            self.data_path = cfg['TRAINING_DIR']
-        elif data_type == 'val':
-            self.data_path = cfg['TESTING_DIR']
-        elif data_type == 'test':
-            self.data_path = cfg['TESTING_DIR']
-        else:
-            raise ValueError('data_type must be train, val or test')
+
+        
+        self.data_path = './dataset/' + data_path_tail
+        
         self.data_list = os.listdir(self.data_path)
+        
         self.transform = transforms.Compose([
+            # center crop 
+            transforms.CenterCrop((200 - 5 , 50 - 5), p = 0.5),
+            # rotation 3 độ 
+            transforms.RandomRotation(3), 
+            
+            # thay đổi độ sáng 10%
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1, p = 0.5),
+            
+            # thay đổi độ sáng 5%
+            transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05, p = 0.5),
+            
+            # thay đổi độ sáng 1%
+            transforms.ColorJitter(brightness=0.01, contrast=0.01, saturation=0.01, hue=0.01, p = 0.5),
+            
             transforms.Resize((HEIGHT, WIDTH)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
+        
+        
     def __getitem__(self, index):
         # Thử lấy ảnh với index hiện tại, nếu lỗi thì thử lấy ảnh tiếp theo
         max_retries = 10  # Số lần thử tối đa
@@ -44,7 +57,8 @@ class captcha_dataset(data.Dataset):
                 img = self.transform(Image.open(img_path))
                 # label = self.data_list[idx].split('.')[0].lower() 
                 label = self.data_list[idx].split('.')[0]
-                
+                if len(label) < CHAR_LEN:
+                    label = label + '_' * (CHAR_LEN - len(label))
                 
                 return img, str_to_vec(label)
             except (PIL.UnidentifiedImageError, OSError, IOError) as e:

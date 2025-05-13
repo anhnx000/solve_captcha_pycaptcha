@@ -4,8 +4,8 @@ DATASET:
   TESTING_DIR: './dataset/val'
 
 
-  TRAINING_DATASET_LEN: 50_000 # Change this to 100k may get better performance
-  TESTING_DATASET_LEN: 1_000
+  TRAINING_DATASET_LEN: 100 # Change this to 100k may get better performance
+  TESTING_DATASET_LEN: 10
 
 
   CAPTCHA:
@@ -19,16 +19,16 @@ DATASET:
 
 SOLVER:
   LR: 5.0e-5
-  BATCH_SIZE: 32
+  BATCH_SIZE: 256
   EPOCH: 10_000
-
 
 
 LOGGER:
   CHECKPOINT_DIR: './checkpoint'
   LOG_DIR: './logs'
 
-
 TRAINER:
   PRECISION: '16-mixed'
+
+
 
