@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.utils.data as data
-import torchvision.transforms as transforms
-import torch.nn.functional as F
+import numpy as np
 from PIL import Image
 import os
 import PIL
-from torchvision.transforms.transforms import Resize
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 from utils.config_util import configGetter
 
 cfg = configGetter('DATASET')
@@ -26,24 +26,48 @@ class captcha_dataset(data.Dataset):
         
         self.data_list = os.listdir(self.data_path)
         
-        self.transform = transforms.Compose([
+        # Replace torchvision transforms with Albumentations
+        self.transform = A.Compose([
             # center crop 
-            transforms.CenterCrop((200 - 5 , 50 - 5), p = 0.5),
-            # rotation 3 độ 
-            transforms.RandomRotation(3), 
+            A.CenterCrop(height=50-5, width=200-5, p=0.3),
+            # rotation 5 degrees
+            A.Rotate(limit=5, p=0.5),
             
-            # thay đổi độ sáng 10%
-            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1, p = 0.5),
+            # rotate 10 degrees
+            A.Rotate(limit=10, p=0.3),
             
-            # thay đổi độ sáng 5%
-            transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05, p = 0.5),
+            # brightness/contrast adjustments - equivalent to ColorJitter
+            A.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1, p=0.5),
+            A.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05, p=0.5),
+            A.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.15, hue=0.01, p=0.5),
             
-            # thay đổi độ sáng 1%
-            transforms.ColorJitter(brightness=0.01, contrast=0.01, saturation=0.01, hue=0.01, p = 0.5),
+            # dịch toàn bộ ảnh sang trái 20 pixel
+            A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=0, p=0.2),
             
-            transforms.Resize((HEIGHT, WIDTH)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            # dịch toàn bộ ảnh sang phải 20 pixel
+            A.ShiftScaleRotate(shift_limit=-0.2, scale_limit=0.2, rotate_limit=0, p=0.2),
+            
+            # dịch toàn bộ ảnh lên trên 10 pixel, có 50 pixel chiều cao
+            A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=0, p=0.2),
+            
+            # dịch toàn bộ ảnh xuống dưới 0.2 %
+            A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=0, p=0.2),
+            
+                  # dịch toàn bộ ảnh sang trái 10%
+            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            
+            # dịch toàn bộ ảnh sang phải 10%
+            A.ShiftScaleRotate(shift_limit=-0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            
+            # dịch toàn bộ ảnh lên trên 10%
+            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            # dịch toàn bộ ảnh xuống dưới 10%
+            A.ShiftScaleRotate(shift_limit=-0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            
+            # resize
+            A.Resize(height=HEIGHT, width=WIDTH),
+            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ToTensorV2()
         ])
         
         
@@ -54,7 +78,10 @@ class captcha_dataset(data.Dataset):
             try:
                 idx = (index + attempt) % len(self.data_list)  # Tránh vượt quá giới hạn
                 img_path = os.path.join(self.data_path, self.data_list[idx])
-                img = self.transform(Image.open(img_path))
+                image = np.array(Image.open(img_path))
+                transformed = self.transform(image=image)
+                img = transformed["image"]
+                
                 # label = self.data_list[idx].split('.')[0].lower() 
                 label = self.data_list[idx].split('.')[0]
                 if len(label) < CHAR_LEN:
@@ -68,12 +95,11 @@ class captcha_dataset(data.Dataset):
         # Nếu tất cả các lần thử đều thất bại, trả về một mẫu mặc định hoặc raise lỗi
         # Hoặc có thể tạo một ảnh trắng với kích thước đúng
         blank_img = torch.zeros(3, HEIGHT, WIDTH)
-        blank_label = str_to_vec("0" * CHAR_LEN)  # Tạo nhãn mặc định với độ dài CHAR_LEN
+        blank_label = str_to_vec("_" * CHAR_LEN)  # Tạo nhãn mặc định với độ dài CHAR_LEN # _ là kí tự đặc biệt blank 
         return blank_img, blank_label
 
     def __len__(self):
         return len(self.data_list)
-
 
 def str_to_lst(s: str):
     lst = []
@@ -89,22 +115,48 @@ def str_to_lst(s: str):
     return lst
 
 
-def lst_to_str(lst: list):
+def list_to_str(lst: list):
+    """
+    dựa vào hàm str_to_lst để chuyển đổi list các số từ 0 đến 62 thành list các kí tự
+    
+    input: list các số từ 0 đến 62
+    output: string
+    """
     s = ''
     for i in lst:
-        if i < 10:
+        if isinstance(i, torch.Tensor):
+            i = i.item()
+        if 0 <= i < 10:
             s += chr(i + ord('0'))
-        elif i < 36:
+        elif 10 <= i < 36:
             s += chr(i + ord('a') - 10)
-        else:
+        elif 36 <= i < 62:
             s += chr(i + ord('A') - 36)
-        if i == 62:
+        elif i == 62:
             s += '_'
     return s
+  
+
+
+# def lst_to_str(lst: list):
+
+#     s = ''
+#     for i in lst:
+#         if type(i) == torch.Tensor:
+#             i = i.item()
+#         if i < 10:
+#             s += chr(i + ord('0'))
+#         elif i < 36:
+#             s += chr(i + ord('a') - 10)
+#         else:
+#             s += chr(i + ord('A') - 36)
+#         if i == 62:
+#             s += '_'
+#     return s
 
 
 def str_to_onehotvec(s: str):
-    return F.one_hot(torch.LongTensor(str_to_lst(s)), CLASS_NUM)
+    return torch.nn.functional.one_hot(torch.LongTensor(str_to_lst(s)), CLASS_NUM)
 
 
 def str_to_vec(s: str):
@@ -114,4 +166,4 @@ def str_to_vec(s: str):
 if __name__ == '__main__':
     d = captcha_dataset('./dataset', 'train')
     a = d[0]
-    print(a[0].size(), a[1].size(), lst_to_str(a[1]))
+    print(a[0].size(), a[1].size(), list_to_str(a[1]))

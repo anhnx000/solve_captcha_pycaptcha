@@ -10,3 +10,6 @@ wandb
 captcha
 tqdm 
 PyYAML
+onnx
+onnxruntime-genai
+onnxruntime

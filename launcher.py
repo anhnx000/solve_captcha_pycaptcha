@@ -65,11 +65,16 @@ def main(args):
     
     # Add CTC to experiment name if using CTC loss
     exp_name = f'exp_ctc_{add_time_str}' if args.use_ctc else f'exp_{add_time_str}'
-    wandb.init(project="captcha", group="ctc_loss", name=exp_name)
+    
+    # if args.use_ctc = true thì group là ctc_loss, nếu false thì group là no_ctc_loss  
+    if args.use_ctc:
+        wandb.init(project="captcha", group="ctc_loss", name=exp_name)
+    else:
+        wandb.init(project="captcha", group="no_ctc_loss", name=exp_name)
     
     # Setup model checkpoint callbacks
     checkpoint_callbacks = [
-        ModelCheckpoint(
+        ModelCheckpoint( 
             monitor='val_acc', 
             mode='max',
             save_top_k=1,
@@ -90,19 +95,61 @@ def main(args):
         'fast_dev_run': False,
         'max_epochs': epoch,
         'log_every_n_steps': 100,
-        'callbacks': checkpoint_callbacks
+        'callbacks': checkpoint_callbacks,
     }
     
-    # If checkpoint path is provided, use it to resume training
-    if args.resume_from_checkpoint:
-        print(f"Resuming training from checkpoint: {args.resume_from_checkpoint}")
-        trainer_kwargs['ckpt_path'] = args.resume_from_checkpoint
-        
+    # Create trainer
     trainer = pl.Trainer(**trainer_kwargs)
     
-    trainer.fit(model, datamodule=dm)
+    # If checkpoint path is provided, use it in fit() method to resume training
+    if args.resume_from_checkpoint:
+        print(f"Resuming training from checkpoint: {args.resume_from_checkpoint}")
+        trainer.fit(model, datamodule=dm, ckpt_path=args.resume_from_checkpoint)
+    else:
+        trainer.fit(model, datamodule=dm)
+    
     os.makedirs(args.save_path, exist_ok=True)
-    trainer.save_checkpoint(os.path.join(args.save_path, 'model.pth'))
+    
+    # import ipdb; ipdb.set_trace() 
+    
+    
+    val_acc = trainer.callback_metrics['val_acc']
+    model_name = args.model_name
+    
+    # Save PyTorch Lightning checkpoint (full model for resuming training)
+    trainer.save_checkpoint(os.path.join(args.save_path, f'{val_acc:.2f}_model_{model_name}.pth'))
+    
+    # Save model state dict (weights only)
+    torch.save(model.model.state_dict(), os.path.join(args.save_path, f'{val_acc:.2f}_model_{model_name}_weights.pt'))
+    
+    # Save model in TorchScript format
+    print("Saving model in TorchScript format...")
+    model.eval()  # Set model to evaluation mode
+    # scripted_model = torch.jit.script(model.model)  # Script the base model, not the Lightning module
+    # scripted_model.save(os.path.join(args.save_path, f'{val_acc:.2f}_model_{model_name}_scripted.pt'))
+    
+    # Save model in ONNX format
+    print("Saving model in ONNX format...")
+    # Create dummy input based on the dataset dimensions
+    dummy_input = torch.randn(1, 3, 50, 200)  # Batch size 1, 3 channels, HEIGHT=224, WIDTH=224
+    
+    # Export to ONNX format
+    torch.onnx.export(model.model,                    # model being exported
+                      dummy_input,                     # model input example
+                      os.path.join(args.save_path, f'{val_acc:.2f}_model_{model_name}.onnx'),  # output file
+                      export_params=True,              # store the trained weights
+                      opset_version=12,                # ONNX version
+                      do_constant_folding=True,        # optimization
+                      input_names=['input'],           # input layer names
+                      output_names=['output'],         # output layer names
+                      dynamic_axes={'input': {0: 'batch_size'},  # dynamic batch size
+                                   'output': {0: 'batch_size'}})
+    
+    print(f"Models saved in {args.save_path} in multiple formats:")
+    print(f"1. PyTorch Lightning checkpoint: {val_acc:.2f}_model_{model_name}.pth")
+    print(f"2. Model weights only: {val_acc:.2f}_model_{model_name}_weights.pt") 
+    # print(f"3. TorchScript format: {val_acc:.2f}_model_{model_name}_scripted.pt")
+    print(f"4. ONNX format: {val_acc:.2f}_model_{model_name}.onnx")
     
 if __name__ == "__main__":
     main(args)

@@ -14,10 +14,7 @@ def test(args):
         version=2
     )
     trainer = pl.Trainer(deterministic=True,
-                        #  gpus=-1,
-                        #  auto_select_gpus=True,
                          precision=32,
-                         logger=wandb_logger,
                          fast_dev_run=False,
                          max_epochs=5,
                          log_every_n_steps=50,

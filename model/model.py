@@ -3,11 +3,11 @@ import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
 import torch
-from data.dataset import HEIGHT, WIDTH, CLASS_NUM, CHAR_LEN, lst_to_str
+from data.dataset import HEIGHT, WIDTH, CLASS_NUM, CHAR_LEN, list_to_str
 import wandb
 import os 
 
-def eval_acc(label, pred):
+def eval_acc(label: torch.Tensor, pred: torch.Tensor) -> torch.Tensor:
     # label: CHAR_LEN x batchsize
     # pred: CHAR_LEN x batchsize x CLASS_NUM
     pred_res = pred.argmax(dim=2) # CHAR_LEN x batchsize
@@ -16,7 +16,7 @@ def eval_acc(label, pred):
 
 class captcha_model(pl.LightningModule):
     def __init__(self, model, lr=1e-4, optimizer=None, use_ctc=False):
-        super(captcha_model, self).__init__()
+        pl.LightningModule.__init__(self)
         self.model = model
         self.lr = lr
         self.optimizer = optimizer
@@ -25,11 +25,11 @@ class captcha_model(pl.LightningModule):
         # Add a blank token for CTC loss (using the last class index)
         self.blank_index = CLASS_NUM
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.model(x)
         return x
 
-    def step(self, batch, batch_idx):
+    def step(self, batch, batch_idx) -> tuple:
         x, y = batch
         y_hat = self(x)
         
@@ -75,9 +75,10 @@ class captcha_model(pl.LightningModule):
             loss = 0
             for i in range(CHAR_LEN):
                 loss += F.cross_entropy(y_hat_permuted[i], y_permuted[i])
+                
             return loss, y_permuted, y_hat_permuted
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx) -> dict:
         loss, label, y_pred = self.step(batch, batch_idx)
         # log label and y to file './logs/train_label_y.txt'
       
@@ -109,14 +110,35 @@ class captcha_model(pl.LightningModule):
         
         if batch_idx % 100 == 0:
             # Log directly using wandb
-            wandb.log({"train_loss": loss.item(), "train_acc": eval_acc_score})
+            wandb.log({"train_loss_step": loss.item(), "train_acc_step": eval_acc_score})
             
             # Check if optimizer exists before logging learning rate
             # Note: In PyTorch Lightning, you can get optimizer through trainer
             # if self.trainer and hasattr(self.trainer, 'optimizers') and self.trainer.optimizers:
             wandb.log({"learning_rate": self.trainer.optimizers[0].param_groups[0]['lr']})
             
-        return loss
+        # Store outputs for epoch-end collection
+        self.train_step_outputs = getattr(self, 'train_step_outputs', [])
+        self.train_step_outputs.append({"loss": loss, "train_loss": loss.item(), "train_acc": eval_acc_score})
+        
+        return {"loss": loss}
+
+    def on_train_epoch_end(self):
+        # Calculate average metrics across all batches in epoch
+        if hasattr(self, 'train_step_outputs') and self.train_step_outputs:
+            avg_loss = torch.stack([x["loss"] for x in self.train_step_outputs]).mean()
+            avg_train_loss = sum([x["train_loss"] for x in self.train_step_outputs]) / len(self.train_step_outputs)
+            avg_train_acc = sum([x["train_acc"] for x in self.train_step_outputs]) / len(self.train_step_outputs)
+            
+            # Log epoch-level metrics to wandb
+            wandb.log({
+                "train_loss_epoch": avg_train_loss,
+                "train_acc_epoch": avg_train_acc,
+                "epoch": self.current_epoch
+            })
+            
+            # Reset outputs
+            self.train_step_outputs = []
 
     def validation_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
@@ -126,26 +148,44 @@ class captcha_model(pl.LightningModule):
         # Ensure logs directory exists
         os.makedirs('./logs', exist_ok=True)
         
-        # if batch_idx == 0:
-        #     if os.path.exists('./logs/val_label_y.txt'):
-        #         with open('./logs/val_label_y.txt', 'a') as f:
-        #             f.write(f"****************************\n")
-        #             f.write(f"label: \n{label[1]}\n")
-        #             f.write(f"----------------------------\n")
-        #             f.write(f"y: \n{y[1]}\n")
-        #     else:
-        #         with open('./logs/val_label_y.txt', 'w') as f:
-        #             f.write(f"****************************\n")
-        #             f.write(f"label: \n{label[1]}\n")
-        #             f.write(f"----------------------------\n")
-        #             f.write(f"y: \n{y[1]}\n")
+        # # chuyển label và y thành string và lưu lại vào file './logs/val_label_y.txt'
+        # with open('./logs/val_label_y.txt', 'a') as f:
+        #     f.write(f"****************************\n")
+        #     for i in range(label.size(0)):
+        #         f.write(f"----------------------------\n")
+        #         label_str = lst_to_str(label[i].tolist())
+        #         y_str = lst_to_str(y[i].tolist())
                 
-                
+        #         f.write(f"label: {label_str}\n")
+        #         f.write(f"y: {y_str}\n")
+            
         eval_acc_score = eval_acc(label, y)
         self.log("val_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
         self.log("val_acc", eval_acc_score, on_step=False, on_epoch=True, prog_bar=True)
-        wandb.log({"val_loss": loss.item(), "val_acc": eval_acc_score})
-        return loss
+        if batch_idx % 50 == 0:
+            wandb.log({"val_loss_step": loss.item(), "val_acc_step": eval_acc_score})
+        
+        # Store metrics for epoch-end logging
+        self.val_step_outputs = getattr(self, 'val_step_outputs', [])
+        self.val_step_outputs.append({"val_loss": loss.item(), "val_acc": eval_acc_score})
+        
+        return {"val_loss": loss.item(), "val_acc": eval_acc_score}
+        
+    def on_validation_epoch_end(self):
+        # Log epoch-level metrics to wandb
+        if hasattr(self, 'val_step_outputs') and self.val_step_outputs:
+            avg_loss = sum([x["val_loss"] for x in self.val_step_outputs]) / len(self.val_step_outputs)
+            avg_acc = sum([x["val_acc"] for x in self.val_step_outputs]) / len(self.val_step_outputs)
+            
+            # Log to wandb with epoch info
+            wandb.log({
+                "val_loss_epoch": avg_loss,
+                "val_acc_epoch": avg_acc,
+                "epoch": self.current_epoch
+            })
+            
+            # Reset outputs
+            self.val_step_outputs = []
 
     def test_step(self, batch, batch_idx):
         loss, label, y = self.step(batch, batch_idx)
@@ -167,7 +207,7 @@ class captcha_model(pl.LightningModule):
             wandb.log({"test_pred": res})
         return loss
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         if self.optimizer is None:
             optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
@@ -177,31 +217,31 @@ class captcha_model(pl.LightningModule):
 
 class model_resnet(torch.nn.Module):
     def __init__(self):
-        super(model_resnet, self).__init__()
-        self.resnet = models.resnet18(weights=False)
-        self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
+        torch.nn.Module.__init__(self)
+        self.resnet = models.resnet18(weights=None)
+        # self.resnet.fc = nn.Linear(512, CHAR_LEN*CLASS_NUM)
+        self.resnet.fc = nn.Linear(512, 5*63)
         
         # self.resnet = models.resnext101_32x8d(weights=True)
         # self.resnet.fc = nn.Linear(2048, CHAR_LEN*CLASS_NUM)
 
-
         # # use EfficientNetV2-S
         # self.resnet = models.efficientnet_v2_s(weights=True)
         # self.resnet.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
-
-
-    def forward(self, x):
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.resnet(x)
-        x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
+        # x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
+        x = x.view(x.size(0), 5, 63)
         return x
 
 class model_efficientnet(torch.nn.Module):
     def __init__(self):
-        super(model_efficientnet, self).__init__()
-        self.efficientnet = models.efficientnet_v2_s(weights=False)
+        torch.nn.Module.__init__(self)
+        self.efficientnet = models.efficientnet_v2_s(weights=None)
         self.efficientnet.classifier = nn.Linear(1280, CHAR_LEN*CLASS_NUM)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.efficientnet(x)
         x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
         return x
@@ -210,22 +250,22 @@ class model_efficientnet(torch.nn.Module):
 class model_vit(torch.nn.Module):
     # use vision transformer  ocr pretrain on ocr dataset
     def __init__(self):
-        super(model_vit, self).__init__()
+        torch.nn.Module.__init__(self)
         self.vit = models.vit_b_16(weights=True)
         self.vit.heads = nn.Linear(768, CHAR_LEN*CLASS_NUM)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.vit(x)
         x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
         return x
      
 class model_mobilenet(torch.nn.Module):
     def __init__(self):
-        super(model_mobilenet, self).__init__()
+        torch.nn.Module.__init__(self)
         self.mobilenet = models.mobilenet_v3_large(weights=True)
         self.mobilenet.classifier = nn.Linear(960, CHAR_LEN*CLASS_NUM)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.mobilenet(x)
         x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
         return x
@@ -240,7 +280,7 @@ class model_mobilenet(torch.nn.Module):
         
 class model_conv(torch.nn.Module):
     def __init__(self):
-        super().__init__()
+        torch.nn.Module.__init__(self)
         # 3x160x60
         self.layer1 = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
@@ -270,7 +310,7 @@ class model_conv(torch.nn.Module):
         )
         # CLASS_NUM*4
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
