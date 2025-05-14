@@ -66,7 +66,7 @@ class captcha_dataset(data.Dataset):
             
             # resize
             A.Resize(height=HEIGHT, width=WIDTH),
-            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            # A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ToTensorV2()
         ])
         
