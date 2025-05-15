@@ -4,9 +4,9 @@ import random
 import math
 
 # Define paths
-src_dir = "/home/huongntt/Works/anhnx/solve_captcha_pycaptcha/dataset_real"
+src_dir = "./dataset_real"
 train_dir = os.path.join(src_dir, "train")
-test_dir = os.path.join(src_dir, "test")
+test_dir = os.path.join(src_dir, "val")
 
 # Create directories if they don't exist
 os.makedirs(train_dir, exist_ok=True)
@@ -34,11 +34,15 @@ for file in train_files:
     dst_path = os.path.join(train_dir, file)
     shutil.copy2(src_path, dst_path)
     print(f"Copied {file} to train set")
+    # delete file in src_dir
+    os.remove(src_path)
 
 for file in test_files:
     src_path = os.path.join(src_dir, file)
     dst_path = os.path.join(test_dir, file)
     shutil.copy2(src_path, dst_path)
     print(f"Copied {file} to test set")
+    # delete file in src_dir
+    os.remove(src_path)
 
 print("Dataset split complete!")

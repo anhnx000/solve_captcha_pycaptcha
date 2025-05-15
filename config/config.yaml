@@ -4,8 +4,8 @@ DATASET:
   TESTING_DIR: './dataset/val'
 
 
-  TRAINING_DATASET_LEN: 200_000 # Change this to 100k may get better performance
-  TESTING_DATASET_LEN: 1
+  TRAINING_DATASET_LEN: 300_000 # Change this to 100k may get better performance
+  TESTING_DATASET_LEN: 3
 
 
   CAPTCHA:
@@ -20,7 +20,7 @@ DATASET:
 SOLVER:
   # LR: 5.0e-4
   LR: 8.0e-4
-  BATCH_SIZE: 180
+  BATCH_SIZE: 
   EPOCH: 20
 
 

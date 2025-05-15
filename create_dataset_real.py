@@ -2,9 +2,9 @@ import os
 import shutil
 
 # Define paths
-source_dir = '/home/huongntt/Works/anhnx/solve_captcha_pycaptcha/dataset_xa/captcha'
-label_file = '/home/huongntt/Works/anhnx/solve_captcha_pycaptcha/dataset_xa/captcha_label.txt'
-target_dir = '/home/huongntt/Works/anhnx/solve_captcha_pycaptcha/dataset_real'
+source_dir = './dataset_xa/captcha_new'
+label_file = './dataset_xa/captcha_label_new.txt'
+target_dir = './dataset_real'
 
 # Create target directory if it doesn't exist
 os.makedirs(target_dir, exist_ok=True)

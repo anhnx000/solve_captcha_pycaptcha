@@ -9,6 +9,7 @@ def train_arg_parser():
     parser.add_argument("--model_name", default='resnet18') # resnet18, resnet34, EfficientNetV2-S, vit, mobilenet
     parser.add_argument("--resume_from_checkpoint", default=None, help="Path to checkpoint file to resume training from")
     parser.add_argument("--use_ctc", action="store_true", help="Use CTC loss for training")
+    parser.add_argument("--use_dali", action="store_true", help="Use NVIDIA DALI for GPU-accelerated data loading")
     args = parser.parse_args()
     return args
 

@@ -29,6 +29,7 @@ class captcha_model(pl.LightningModule):
         self.blank_index = CLASS_NUM
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.float()
         x = self.model(x)
         return x
 
@@ -264,8 +265,8 @@ class model_vit(torch.nn.Module):
 class model_mobilenet(torch.nn.Module):
     def __init__(self):
         torch.nn.Module.__init__(self)
-        self.mobilenet = models.mobilenet_v3_large(weights=True)
-        self.mobilenet.classifier = nn.Linear(960, CHAR_LEN*CLASS_NUM)
+        self.mobilenet = models.mobilenet_v3_small(weights=False)
+        self.mobilenet.classifier = nn.Linear(576, CHAR_LEN*CLASS_NUM)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.mobilenet(x)

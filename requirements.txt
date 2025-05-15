@@ -13,3 +13,4 @@ PyYAML
 onnx
 onnxruntime-genai
 onnxruntime
+albumentations

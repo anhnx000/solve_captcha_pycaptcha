@@ -1,5 +1,10 @@
 from model.model import captcha_model, model_resnet, model_efficientnet, model_vit, model_mobilenet, model_trocr
 from data.datamodule import captcha_dm
+# Try to import DALI_AVAILABLE, but don't fail if it can't be imported
+try:
+    from data import DALI_AVAILABLE
+except ImportError:
+    DALI_AVAILABLE = False
 import pytorch_lightning as pl
 import torch.optim as optim
 import torch
@@ -46,6 +51,14 @@ def main(args):
     # Force wandb to be online mode
     os.environ['WANDB_MODE'] = 'online'
     
+    # Check if DALI was requested but not available
+    if args.use_dali and not DALI_AVAILABLE:
+        print("NVIDIA DALI requested but not available. Falling back to standard PyTorch DataLoader.")
+        print("To install DALI, run: pip install --extra-index-url https://developer.download.nvidia.com/compute/redist nvidia-dali-cuda110")
+        args.use_dali = False
+    elif args.use_dali:
+        print("Using NVIDIA DALI for GPU-accelerated data loading")
+    
     if args.model_name == 'resnet':
         m  = model_resnet()
     elif args.model_name == 'efficientnet':
@@ -59,7 +72,10 @@ def main(args):
     
     model = captcha_model(
         model=m, lr=lr, use_ctc=args.use_ctc)
-    dm = captcha_dm(batch_size=batch_size, num_workers=20)
+    
+    # Initialize datamodule with DALI if requested
+    dm = captcha_dm(batch_size=batch_size, num_workers=20, use_dali=args.use_dali)
+    
     add_time_str = datetime.now().strftime("%Y%m%d_%H%M")
     # setting để wandb chỉ lưu online mode
     os.environ['WANDB_MODE'] = 'online'
@@ -67,8 +83,13 @@ def main(args):
     # Add CTC to experiment name if using CTC loss
     exp_name = f'exp_ctc_{add_time_str}' if args.use_ctc else f'exp_{add_time_str}'
     
+    # Add DALI to experiment name if using DALI
+    if args.use_dali:
+        exp_name += '_dali'
+    
     exp_name = exp_name + '_' + args.model_name
-    # if args.use_ctc = true thì group là ctc_loss, nếu false thì group là no_ctc_loss  
+    
+    # Configure wandb project groups
     if args.use_ctc:
         wandb.init(project="captcha", group="ctc_loss", name=exp_name)
     else:
