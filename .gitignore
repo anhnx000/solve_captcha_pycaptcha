@@ -17,6 +17,8 @@ lightning_logs/
 
 data_aug 
 data_aug/
-
+dataset_real_pre_old
+dataset_real_pre/*
+dataset_real_pre
 
 
