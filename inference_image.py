@@ -6,7 +6,7 @@ import onnxruntime as ort
 from PIL import Image
 import torchvision.transforms as transforms
 import argparse
-from model.model import captcha_model, model_conv, model_resnet, model_efficientnet, model_vit, model_mobilenet
+from model.model import captcha_model, model_resnet, model_efficientnet, model_vit, model_mobilenet
 import pytorch_lightning as pl
 from data.dataset import HEIGHT, WIDTH, CLASS_NUM, CHAR_LEN, list_to_str
 
@@ -275,10 +275,10 @@ def pytorch_inference(image_path, model_path, model_name, device):
     return result
 
 if __name__ == "__main__":
-    image_real_folder_path = 'dataset_real_pre'
+    image_real_folder_path = 'dataset_real/val'
     image_real_files = os.listdir(image_real_folder_path)
     
-    model_path = 'lightning_logs/version_128/val_acc=0.30_best_val_acc-epoch=07.ckpt'
+    model_path = 'lightning_logs/version_19/val_acc=0.46_best_val_acc-epoch=06.ckpt'
     for image_real_file in image_real_files:
         image_path = os.path.join(image_real_folder_path, image_real_file)
         # result = onnx_inference(image_path, 'checkpoint/0.39_model_resnet.onnx', force_cpu=False)
@@ -288,9 +288,12 @@ if __name__ == "__main__":
         
         # true label
         true_label = image_real_file.split('.')[0]
+        if len(true_label) < 5:
+            true_label = true_label + '_'
         
         # Only print if there's a match
         if result == true_label:
+            print("************************************************")
             print(f"True ---- Label: {true_label}, Pred: {result}")
             
         else:

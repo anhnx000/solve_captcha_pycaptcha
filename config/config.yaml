@@ -5,7 +5,7 @@ DATASET:
 
 
   TRAINING_DATASET_LEN: 200_000 # Change this to 100k may get better performance
-  TESTING_DATASET_LEN: 10
+  TESTING_DATASET_LEN: 1
 
 
   CAPTCHA:
@@ -18,8 +18,9 @@ DATASET:
 
 
 SOLVER:
-  LR: 5.0e-5
-  BATCH_SIZE: 48
+  # LR: 5.0e-4
+  LR: 8.0e-4
+  BATCH_SIZE: 180
   EPOCH: 20
 
 

@@ -6,6 +6,9 @@ import torch
 from data.dataset import HEIGHT, WIDTH, CLASS_NUM, CHAR_LEN, list_to_str
 import wandb
 import os 
+        # Import transformers library
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+
 
 def eval_acc(label: torch.Tensor, pred: torch.Tensor) -> torch.Tensor:
     # label: CHAR_LEN x batchsize
@@ -162,8 +165,7 @@ class captcha_model(pl.LightningModule):
         eval_acc_score = eval_acc(label, y)
         self.log("val_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
         self.log("val_acc", eval_acc_score, on_step=False, on_epoch=True, prog_bar=True)
-        if batch_idx % 50 == 0:
-            wandb.log({"val_loss_step": loss.item(), "val_acc_step": eval_acc_score})
+        wandb.log({"val_loss_step": loss.item(), "val_acc_step": eval_acc_score})
         
         # Store metrics for epoch-end logging
         self.val_step_outputs = getattr(self, 'val_step_outputs', [])
@@ -274,50 +276,31 @@ class model_mobilenet(torch.nn.Module):
      
      
      
-     
-     
-     
-        
-class model_conv(torch.nn.Module):
+
+# use TrOcr pretrain 
+class model_trocr(torch.nn.Module):
     def __init__(self):
         torch.nn.Module.__init__(self)
-        # 3x160x60
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
-        # 32x80x30
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
-        # 64x40x15
-        self.layer3 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
-        # 128x20x7
-        self.fc = nn.Sequential(
-            nn.Linear(128*(WIDTH//8)*(HEIGHT//8), 1024),
-            nn.ReLU(),
-            nn.Linear(1024, CLASS_NUM*CHAR_LEN)
-        )
-        # CLASS_NUM*4
+
+        
+        # Load pretrained TrOCR model
+        self.processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
+        self.model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwritten")
+        
+        # Replace the decoder head for our specific captcha task
+        self.model.decoder.lm_head = nn.Linear(self.model.decoder.config.hidden_size, CHAR_LEN*CLASS_NUM)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-        x = x.view(x.size(0), CHAR_LEN, CLASS_NUM)
+        # TrOCR expects images in a different format, so we may need to adapt the input
+        # This is a simplified version; you might need to adjust based on your requirements
+        features = self.model.encoder(x).last_hidden_state
+        outputs = self.model.decoder(inputs_embeds=features)
+        logits = outputs.logits
+        
+        # Reshape to match the expected captcha format
+        x = logits[:, -1].view(logits.size(0), CHAR_LEN, CLASS_NUM)
         return x
+    
 
 if __name__ == "__main__":
     # Create a properly shaped 3D tensor (CHAR_LEN x batchsize x CLASS_NUM)

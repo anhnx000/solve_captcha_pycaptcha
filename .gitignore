@@ -15,3 +15,8 @@ wandb/
 
 lightning_logs/
 
+data_aug 
+data_aug/
+
+
+

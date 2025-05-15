@@ -1,4 +1,4 @@
-from model.model import captcha_model, model_conv, model_resnet, model_efficientnet, model_vit, model_mobilenet
+from model.model import captcha_model, model_resnet, model_efficientnet, model_vit, model_mobilenet, model_trocr
 from data.datamodule import captcha_dm
 import pytorch_lightning as pl
 import torch.optim as optim
@@ -11,7 +11,7 @@ from datetime import datetime
 from pytorch_lightning.callbacks import ModelCheckpoint, Callback
 
 
-torch.set_float32_matmul_precision('medium')
+torch.set_float32_matmul_precision('high')
 # Parse arguments first so they can be used later
 args = train_arg_parser()
 
@@ -54,7 +54,8 @@ def main(args):
         m  = model_vit()
     elif args.model_name == 'mobilenet':
         m  = model_mobilenet()
-        
+    elif args.model_name == 'trocr':
+        m  = model_trocr()
     
     model = captcha_model(
         model=m, lr=lr, use_ctc=args.use_ctc)
@@ -66,6 +67,7 @@ def main(args):
     # Add CTC to experiment name if using CTC loss
     exp_name = f'exp_ctc_{add_time_str}' if args.use_ctc else f'exp_{add_time_str}'
     
+    exp_name = exp_name + '_' + args.model_name
     # if args.use_ctc = true thì group là ctc_loss, nếu false thì group là no_ctc_loss  
     if args.use_ctc:
         wandb.init(project="captcha", group="ctc_loss", name=exp_name)
@@ -127,6 +129,7 @@ def main(args):
     model.eval()  # Set model to evaluation mode
     # scripted_model = torch.jit.script(model.model)  # Script the base model, not the Lightning module
     # scripted_model.save(os.path.join(args.save_path, f'{val_acc:.2f}_model_{model_name}_scripted.pt'))
+    
     
     # Save model in ONNX format
     print("Saving model in ONNX format...")

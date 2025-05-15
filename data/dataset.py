@@ -29,17 +29,17 @@ class captcha_dataset(data.Dataset):
         # Replace torchvision transforms with Albumentations
         self.transform = A.Compose([
             # center crop 
-            A.CenterCrop(height=50-5, width=200-5, p=0.3),
+            A.CenterCrop(height=50-5, width=200-5, p=0.1),
             # rotation 5 degrees
-            A.Rotate(limit=5, p=0.5),
+            A.Rotate(limit=5, p=0.2),
             
             # rotate 10 degrees
-            A.Rotate(limit=10, p=0.3),
+            A.Rotate(limit=10, p=0.2),
             
             # brightness/contrast adjustments - equivalent to ColorJitter
-            A.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1, p=0.5),
-            A.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05, p=0.5),
-            A.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.15, hue=0.01, p=0.5),
+            A.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1, p=0.2),
+            A.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=0.05, p=0.2),
+            A.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.15, hue=0.01, p=0.1),
             
             # dịch toàn bộ ảnh sang trái 20 pixel
             A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=0, p=0.2),
@@ -54,19 +54,25 @@ class captcha_dataset(data.Dataset):
             A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=0, p=0.2),
             
                   # dịch toàn bộ ảnh sang trái 10%
-            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=0, p=0.1),
             
             # dịch toàn bộ ảnh sang phải 10%
-            A.ShiftScaleRotate(shift_limit=-0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            A.ShiftScaleRotate(shift_limit=-0.1, scale_limit=0.1, rotate_limit=0, p=0.1),
             
             # dịch toàn bộ ảnh lên trên 10%
-            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=0, p=0.1),
             # dịch toàn bộ ảnh xuống dưới 10%
-            A.ShiftScaleRotate(shift_limit=-0.1, scale_limit=0.1, rotate_limit=0, p=0.4),
+            A.ShiftScaleRotate(shift_limit=-0.1, scale_limit=0.1, rotate_limit=0, p=0.1),
+            
+            # làm mờ nhẹ ảnh
+            A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.1),
+            
+            # làm blur ảnh
+            A.GaussianBlur(blur_limit=3, p=0.2),
             
             # resize
             A.Resize(height=HEIGHT, width=WIDTH),
-            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            # A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ToTensorV2()
         ])
         
