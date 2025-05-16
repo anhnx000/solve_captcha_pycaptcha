@@ -1,9 +1,9 @@
-# PyCAPTCHA 🔍
-![版本号](https://img.shields.io/badge/Version-Beta--0.0.1-blue)
-![issues](https://img.shields.io/github/issues/ZiYang-xie/PyCAPTCHA?style=plastic)
-![forks](https://img.shields.io/github/forks/ZiYang-xie/PyCAPTCHA)
-![stars](https://img.shields.io/github/stars/ZiYang-xie/PyCAPTCHA)
-![License](https://img.shields.io/github/license/ZiYang-xie/PyCAPTCHA)
+# PyCAPTCHA with Flexibility Captcha Length
+
+![issues](https://img.shields.io/github/issues/anhnx000/solve_captcha_pycaptcha?style=plastic)
+![forks](https://img.shields.io/github/forks/anhnx000/solve_captcha_pycaptcha)
+![stars](https://img.shields.io/github/stars/anhnx000/solve_captcha_pycaptcha)
+![License](https://img.shields.io/github/license/anhnx000/solve_captcha_pycaptcha)
 
 ![](./assets/captcha.png)
 ---
@@ -19,26 +19,9 @@ Training 2 epoch under 100k images to get over 96% acc on Val dataset 🤩
 ## INSTALL ⚙️
 ### Step0: Clone the Project
 ```shell
-git clone https://github.com/ZiYang-xie/PyCAPTCHA
-cd PyCAPTCHA
+git clone https://github.com/anhnx000/solve_captcha_pycaptcha.git
+cd solve_captcha_pycaptcha
 ```
-
-### Step1: Create & Activate Conda Env
-```shell
-conda create -n "PyCaptcha" python=3.7
-conda activate PyCaptcha
-```
-
-### Step2: Install Pytorch 
-```shell
-conda install torch==1.9.0 torchvision==0.10.0 -c pytorch
-```
-
-### Step3: Install PIP Requirements 
-```shell
-pip install -r requirement.txt
-```
-
 ## Usage 🚀
 
 ### Training
@@ -52,7 +35,6 @@ You can continue training from a previously saved checkpoint:
 python launcher.py --model_name resnet --resume_from_checkpoint ./checkpoint/your_checkpoint_file.ckpt
 ```
 
-## Docment 📃
+## Reference
 > Checkout the PyCAPTCHA Usage in WIKI Page
-  
 Check the [Doc](https://github.com/ZiYang-xie/PyCAPTCHA/wiki)
